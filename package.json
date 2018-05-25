@@ -1,0 +1,23 @@
+{
+  "name": "ddl-generator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jirokun/ddl-generator.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jirokun/ddl-generator/issues"
+  },
+  "homepage": "https://github.com/jirokun/ddl-generator#readme",
+  "dependencies": {
+    "ejs": "^2.6.1",
+    "xlsx": "^0.12.13"
+  }
+}

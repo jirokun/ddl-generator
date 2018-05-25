@@ -5,16 +5,26 @@
  *
  * 各列の定義は下記のとおりにしておく必要がある
  *   tableComment
- *   columnComment
+ *   columnCommentJ
  *   tableName
  *   columnName
  *   columnType
  *   columnPrecision
- *   columnNotNull
- *   columnKey
+ *   columnNN
+ *   columnPK
+ *   columnFK
+ *   columnUK1
+ *   columnUK2
+ *   columnUK3
+ *   columnIDX1
+ *
+ * 使い方: node app.js <xlsx file> <sheet name> <schema>
  */
 var fs = require('fs');
+var process = require('process');
 var xlsx = require('xlsx');
+var ejs = require('ejs');
+
 const utils = xlsx.utils;
 
 function createRowModel(fileName, sheetName) {
@@ -24,14 +34,21 @@ function createRowModel(fileName, sheetName) {
 
   const rows = [];
   const FIELDS = [
-    'tableComment',
-    'columnComment',
+    'tableNameJ',
+    'tableCommentJ',
+    'columnNameJ',
+    'columnCommentJ',
     'tableName',
     'columnName',
     'columnType',
     'columnPrecision',
-    'columnNotNull',
-    'columnKey',
+    'columnNN',
+    'columnPK',
+    'columnFK',
+    'columnUK1',
+    'columnUK2',
+    'columnUK3',
+    'columnIDX1',
   ];
   for (let r = range.s.r; r <= range.e.r; r++) {
     if (r === 0) continue; // ヘッダーは飛ばす
@@ -53,41 +70,40 @@ function createStructuredModel(rowModel) {
     if (!(row.tableName in model)) {
       model[row.tableName] = {
         name: row.tableName,
-        comment: row.tableComment,
+        comment: row.tableNameJ + (row.tableCommentJ ? `\n\n${row.tableCommentJ}` : ''),
         fields: []
       };
     }
     const table = model[row.tableName];
     table.fields.push({
       name: row.columnName,
-      comment: row.columnComment,
+      comment: row.columnNameJ + (row.columnCommentJ ? `\n\n${row.columnCommentJ}` : ''),
       type: row.columnType,
+      dbType: dbType(row),
       precision: row.columnPrecision || '',
-      notNull: row.columnNotNull === '1',
-      key: row.columnKey || '',
+      nn: row.columnNN == '1',
+      pk: row.columnPK == '1',
+      fk: row.columnFK,
+      uk1: row.columnUK1,
+      uk2: row.columnUK2,
+      uk3: row.columnUK3,
+      idx1: row.columnIDX1 || '',
     });
   }
   return model;
 }
 
+function dbType(row) {
+  if (row.columnType === 'varchar') return `varchar(${row.columnPrecision})`;
+  return row.columnType;
+}
+
 function generateSQL(model, schema) {
-  for (const table in model) {
-    let sql = '';
-    const fieldSQLs = [];
-    sql += `create table ${schema}.${table} (\n`;
-    for (const field of model[table].fields) {
-      const type = field.type === 'varchar' ? `varchar(${field.precision})` : field.type;
-      fieldSQLs.push(`  ${field.name} ${type} ${field.key}`);
-    }
-    sql += fieldSQLs.join(',\n');
-    sql += '\n);\n';
-
-    sql += `COMMENT ON TABLE ${schema}.${table} IS E'${model[table].comment.replace(/\r?\n/g, '\\n')}';\n`;
-    for (const field of model[table].fields) {
-      sql += `COMMENT ON COLUMN ${schema}.${table}.${field.name} IS E'${field.comment.replace(/\r?\n/g, '\\n')}';\n`;
-    }
-
-    console.log(sql);
+  for (const tableName in model) {
+    const table = model[tableName];
+    if (!table.name) continue;
+    var ddl = ejs.render(fs.readFileSync('table.tmpl', 'utf8'), { table, schema });
+    console.log(ddl);
   }
 }
 
@@ -97,4 +113,4 @@ function main(fileName, sheetName, schema) {
   generateSQL(model, schema);
 }
 
-main('data.xlsx', 'Sheet1', 'tiger');
+main(process.argv[2], process.argv[3], process.argv[4]);

@@ -1,0 +1,13 @@
+\echo processing <%= schema %>.<%= table.name %>
+drop table if exists <%= schema %>.<%= table.name %> cascade;
+
+create table <%= schema %>.<%= table.name %> (
+<% table.fields.forEach(function(field, index) { -%>
+  <%= field.name %> <%= field.dbType %> <%= field.pk ? 'primary key' : '' %> <%= field.nn ? 'not null' : '' %> <%= field.fk ? `references ${schema}.${field.fk} (id)` : '' %> <%= table.fields.length == index + 1 ? '' : ',' %>
+<% }) -%>
+);
+
+comment on table <%= schema %>.<%= table.name %> is '<%= table.comment %>';
+<% table.fields.forEach(function(field, index) { -%>
+comment on column <%= schema %>.<%= table.name %>.<%= field.name %> is '<%= field.comment %>';
+<% }) -%>
