@@ -27,3 +27,7 @@ comment on table <%- schema %>.<%- table.name %> is '<%- table.comment %>';
 <% table.fields.forEach(function(field, index) { -%>
 comment on column <%- schema %>.<%- table.name %>.<%- field.name %> is '<%- field.comment %>';
 <% }) -%>
+
+<% table.dataList.forEach((data) => { -%>
+insert into <%- schema %>.<%- table.name %> ( <%- table.fields.map(f => f.name).join(',') %> ) values (<%- table.fields.map(f => `'${data[f.name]}'`).join(',') %> );
+<% }) -%>

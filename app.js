@@ -51,6 +51,16 @@ function createRowModel(fileName, sheetName) {
     'columnIDX1',
     'defaultValue',
     'checkConstraint',
+    'data1',
+    'data2',
+    'data3',
+    'data4',
+    'data5',
+    'data6',
+    'data7',
+    'data8',
+    'data9',
+    'data10',
   ];
   for (let r = range.s.r; r <= range.e.r; r++) {
     if (r === 0) continue; // ヘッダーは飛ばす
@@ -68,7 +78,27 @@ function createRowModel(fileName, sheetName) {
 
 function createStructuredModel(rowModel) {
   const model = createFields(rowModel);
-  return buildIndex(model);
+  buildIndex(model);
+  buildData(model);
+  return model;
+}
+
+function buildData(model) {
+  for (tableName in model) {
+    const table = model[tableName];
+    table.dataList = [];
+    for (let i = 0; i < 10; i++) {
+      const key = `data${i + 1}`;
+      const data = {};
+      table.fields.forEach((field, index) => {
+        if (field[key] === undefined) return;
+        data[field.name] = field[key];
+      });
+      if (data.id) {
+        table.dataList.push(data);
+      }
+    }
+  }
 }
 
 function buildIndex(model) {
@@ -115,6 +145,16 @@ function createFields(rowModel) {
       idx1: row.columnIDX1 || '',
       defaultValue: row.defaultValue,
       checkConstraint: row.checkConstraint,
+      data1: row.data1,
+      data2: row.data2,
+      data3: row.data3,
+      data4: row.data4,
+      data5: row.data5,
+      data6: row.data6,
+      data7: row.data7,
+      data8: row.data8,
+      data9: row.data9,
+      data10: row.data10,
     });
   }
   return model;
@@ -126,12 +166,14 @@ function dbType(row) {
 }
 
 function generateSQL(model, schema) {
+  console.log('begin;');
   for (const tableName in model) {
     const table = model[tableName];
     if (!table.name) continue;
     var ddl = ejs.render(fs.readFileSync('table.tmpl', 'utf8'), { table, schema });
     console.log(ddl);
   }
+  console.log('commit;');
 }
 
 function main(fileName, sheetName, schema) {
