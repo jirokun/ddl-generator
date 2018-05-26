@@ -49,6 +49,8 @@ function createRowModel(fileName, sheetName) {
     'columnUK2',
     'columnUK3',
     'columnIDX1',
+    'defaultValue',
+    'checkConstraint',
   ];
   for (let r = range.s.r; r <= range.e.r; r++) {
     if (r === 0) continue; // ヘッダーは飛ばす
@@ -65,7 +67,30 @@ function createRowModel(fileName, sheetName) {
 }
 
 function createStructuredModel(rowModel) {
+  const model = createFields(rowModel);
+  return buildIndex(model);
+}
+
+function buildIndex(model) {
+  for (tableName in model) {
+    const table = model[tableName];
+    ['uk1', 'uk2', 'uk3', 'idx1'].forEach((keyName) => {
+      const key = [];
+      table.fields.forEach((field) => {
+        if (!field[keyName]) return;
+        key[parseInt(field[keyName], 10) - 1] = field;
+      });
+      if (key.length !== 0) {
+        table[keyName] = key;
+      }
+    });
+  }
+  return model;
+}
+
+function createFields(rowModel) {
   const model = {};
+  // tableとfieldsの作成
   for (const row of rowModel) {
     if (!(row.tableName in model)) {
       model[row.tableName] = {
@@ -88,6 +113,8 @@ function createStructuredModel(rowModel) {
       uk2: row.columnUK2,
       uk3: row.columnUK3,
       idx1: row.columnIDX1 || '',
+      defaultValue: row.defaultValue,
+      checkConstraint: row.checkConstraint,
     });
   }
   return model;
