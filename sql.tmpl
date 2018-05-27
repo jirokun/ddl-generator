@@ -1,0 +1,36 @@
+\echo processing <%- schema %>.<%- table.name %>
+drop table if exists <%- schema %>.<%- table.name %> cascade;
+
+create table <%- schema %>.<%- table.name %> (
+<% table.fields.forEach(function(field, index) { -%>
+  <%- field.name %> <%- field.dbType %> <%- field.pk ? 'primary key' : '' %> <%- field.nn ? 'not null' : '' %> <%- field.fk ? `references ${schema}.${field.fk} (id)` : '' %> <%- table.fields.length == index + 1 ? '' : ',' %>
+<% }) -%>
+);
+
+<% table.fields.forEach((field, index) => { -%>
+  <%_ if (field.checkConstraint) { -%>
+alter table <%- schema %>.<%- table.name %> add constraint <%- table.name %>_<%- field.name %>_check check (<%- field.checkConstraint %>);
+  <%_ } -%>
+<% }) -%>
+<% ['uk1', 'uk2', 'uk3'].forEach((uk) => { -%>
+  <%_ if (table[uk]) { -%>
+create unique index <%- table.name %>_<%- uk %> on <%- schema %>.<%- table.name %> (<%- table.uk1.map(field => field.name).join(',') %>);
+  <%_ } -%>
+<% }) -%>
+<% ['idx1'].forEach((idx) => { -%>
+  <%_ if (table[idx]) { -%>
+create index <%- table.name %>_<%- idx %> on <%- schema %>.<%- table.name %> (<%- table.uk1.map(field => field.name).join(',') %>);
+  <%_ } -%>
+<%_ }) -%>
+
+comment on table <%- schema %>.<%- table.name %> is '<%- table.comment %>';
+<% table.fields.forEach(function(field, index) { -%>
+comment on column <%- schema %>.<%- table.name %>.<%- field.name %> is '<%- field.comment %>';
+<% }) -%>
+
+<% table.dataList.forEach((data) => { -%>
+insert into <%- schema %>.<%- table.name %> ( <%- table.fields.map(f => f.name).join(',') %> ) values (<%- table.fields.map(f => {
+if (data[f.name] === null || data[f.name] === undefined && f.nn) { return "''"; }
+else if (data[f.name] === null || data[f.name] === undefined && !f.nn) { return 'null' }
+else { return `'${data[f.name].toString().replace(/\r?\n/g, '\\n')}'`; }
+}).join(',') %>); <% }) %>

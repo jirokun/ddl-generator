@@ -170,7 +170,7 @@ function generateSQL(model, schema) {
   for (const tableName in model) {
     const table = model[tableName];
     if (!table.name) continue;
-    var ddl = ejs.render(fs.readFileSync('table.tmpl', 'utf8'), { table, schema });
+    var ddl = ejs.render(fs.readFileSync('sql.tmpl', 'utf8'), { table, schema });
     console.log(ddl);
   }
   console.log('commit;');
